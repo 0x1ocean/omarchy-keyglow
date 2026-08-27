@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.0x1ocean.keyglow",
+  "name": "Keyglow",
+  "version": "1.0.0",
+  "author": "0x1ocean",
+  "license": "MIT",
+  "description": "A keyboard layout indicator with instant OSD feedback for Omarchy.",
+  "kinds": ["bar-widget"],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Keyglow",
+    "description": "Current keyboard layout with instant OSD feedback",
+    "category": "Compositor",
+    "allowMultiple": false,
+    "defaultSection": "center"
+  }
+}

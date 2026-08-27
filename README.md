@@ -1,0 +1,42 @@
+# Keyglow
+
+Keyglow is a keyboard layout indicator for the Omarchy bar. It updates when
+the active physical keyboard layout changes and briefly shows the new layout
+through Omarchy's native OSD.
+
+## Features
+
+- Displays the current layout in the bar.
+- Shows instant OSD feedback when the layout changes.
+- Ignores virtual keyboards such as fcitx5 to avoid duplicate notifications.
+- Clicks cycle the layout of the detected physical keyboard.
+- Has no external runtime dependencies beyond Omarchy.
+
+## Install
+
+```sh
+omarchy plugin add https://github.com/0x1ocean/omarchy-keyglow.git --enable
+```
+
+Keyglow is placed in the center section by default. Move it with:
+
+```sh
+omarchy bar move io.github.0x1ocean.keyglow --section center
+```
+
+## Remove
+
+```sh
+omarchy plugin remove io.github.0x1ocean.keyglow
+```
+
+## Development
+
+```sh
+omarchy plugin validate .
+qmllint -I /usr/share/omarchy/shell BarWidget.qml
+```
+
+## License
+
+MIT
