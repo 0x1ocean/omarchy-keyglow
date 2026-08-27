@@ -1,5 +1,7 @@
 # Keyglow
 
+[![Test](https://github.com/0x1ocean/omarchy-keyglow/actions/workflows/test.yml/badge.svg)](https://github.com/0x1ocean/omarchy-keyglow/actions/workflows/test.yml)
+
 Keyglow is a keyboard layout indicator for the Omarchy bar. It updates when
 the active physical keyboard layout changes and briefly shows the new layout
 through Omarchy's native OSD.
