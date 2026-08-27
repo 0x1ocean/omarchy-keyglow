@@ -17,9 +17,12 @@ through Omarchy's native OSD.
 
 ```sh
 omarchy plugin add https://github.com/0x1ocean/omarchy-keyglow.git --enable
+omarchy plugin disable omarchy.keyboard-layout
 ```
 
-Keyglow is placed in the center section by default. Move it with:
+The second command removes the built-in layout indicator from the bar so it
+does not appear beside Keyglow. Keyglow is placed in the center section by
+default. Move it with:
 
 ```sh
 omarchy bar move io.github.0x1ocean.keyglow --section center
@@ -29,13 +32,17 @@ omarchy bar move io.github.0x1ocean.keyglow --section center
 
 ```sh
 omarchy plugin remove io.github.0x1ocean.keyglow
+omarchy plugin enable omarchy.keyboard-layout center
 ```
+
+The second command restores Omarchy's built-in layout indicator.
 
 ## Development
 
 ```sh
 omarchy plugin validate .
 qmllint -I /usr/share/omarchy/shell BarWidget.qml
+node test/model.test.js
 ```
 
 ## License

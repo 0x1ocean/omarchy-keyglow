@@ -4,6 +4,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import qs.Commons
 import qs.Ui
+import "KeyglowModel.js" as KeyglowModel
 
 BarWidget {
   id: root
@@ -11,13 +12,18 @@ BarWidget {
 
   property string layoutFull: ""
   property string keyboardName: ""
+  property string typedKeyboardName: ""
+  property string pendingOsd: ""
+  property bool refreshPending: false
+  property bool keyboardUnresolved: false
+  property int keyboardCount: 0
   property bool multipleLayouts: true
   property var layoutBriefs: ({})
 
-  readonly property string layoutLabel: shortLabel(layoutFull)
+  readonly property string layoutLabel: KeyglowModel.shortLabel(layoutFull, layoutBriefs)
 
   function isPhysicalKeyboard(name) {
-    return !/^(hl-virtual-keyboard|power-button|sleep-button|lid-switch|video-bus|asus-wmi-hotkeys)/.test(String(name || ""))
+    return KeyglowModel.isTypedKeyboard(name)
   }
 
   function eventParts(event) {
@@ -28,42 +34,21 @@ BarWidget {
     return String(event && event.data ? event.data : "").split(",")
   }
 
-  function shortLabel(description) {
-    if (!description) return ""
-    const brief = layoutBriefs[description]
-    const label = typeof brief === "string" && brief
-      ? brief.split("-")[0]
-      : description.split(/\s+/)[0]
-    return label.substring(0, 3).toUpperCase()
-  }
-
-  function parseLayoutBriefs(output) {
-    const briefs = {}
-    let brief = ""
-
-    String(output || "").split("\n").forEach(line => {
-      if (/^\s*- /.test(line)) brief = ""
-
-      const field = line.match(/^  (brief|description): (.*)$/)
-      if (!field) return
-
-      if (field[1] === "brief") {
-        brief = field[2].replace(/^'|'$/g, "")
-      } else if (brief) {
-        briefs[field[2]] = brief
-        brief = ""
-      }
-    })
-
-    return briefs
-  }
-
   function refresh() {
-    if (!queryProc.running) queryProc.running = true
+    if (queryProc.running) {
+      refreshPending = true
+      return
+    }
+    refreshPending = false
+    queryProc.running = true
   }
 
   function showOsd(description) {
-    if (!description || osdProc.running) return
+    if (!description) return
+    if (osdProc.running) {
+      pendingOsd = description
+      return
+    }
     osdProc.command = ["omarchy", "osd", "-i", "keyboard", "-m", description, "-d", "800"]
     osdProc.running = true
   }
@@ -82,13 +67,20 @@ BarWidget {
     target: Hyprland
 
     function onRawEvent(event) {
-      if (!event || String(event.name) !== "activelayout") return
+      if (!event || !event.name) return
+      const eventName = String(event.name)
+      if (eventName === "configreloaded") {
+        root.refresh()
+        return
+      }
+      if (eventName !== "activelayout") return
 
       const parts = root.eventParts(event)
       const keyboard = String(parts[0] || "")
       const layout = String(parts[1] || "")
       if (!root.isPhysicalKeyboard(keyboard) || !layout) return
 
+      root.typedKeyboardName = keyboard
       root.keyboardName = keyboard
       root.layoutFull = layout
       root.showOsd(layout)
@@ -97,6 +89,13 @@ BarWidget {
 
   Process {
     id: osdProc
+
+    onRunningChanged: {
+      if (running || !root.pendingOsd) return
+      const nextLayout = root.pendingOsd
+      root.pendingOsd = ""
+      Qt.callLater(() => root.showOsd(nextLayout))
+    }
   }
 
   Process {
@@ -105,13 +104,22 @@ BarWidget {
 
     stdout: StdioCollector {
       waitForEnd: true
-      onStreamFinished: root.layoutBriefs = root.parseLayoutBriefs(text)
+      onStreamFinished: root.layoutBriefs = KeyglowModel.layoutBriefs(text)
     }
   }
 
   Process {
     id: queryProc
     command: ["hyprctl", "-j", "devices"]
+
+    onRunningChanged: {
+      if (running) {
+        queryStallTimer.restart()
+        return
+      }
+      queryStallTimer.stop()
+      if (root.refreshPending) root.refresh()
+    }
 
     stdout: StdioCollector {
       waitForEnd: true
@@ -127,19 +135,42 @@ BarWidget {
         const keyboards = Array.isArray(devices.keyboards)
           ? devices.keyboards.filter(k => root.isPhysicalKeyboard(k.name))
           : []
-        if (keyboards.length === 0) return
+        if (keyboards.length === 0) {
+          root.keyboardUnresolved = true
+          root.keyboardName = ""
+          root.layoutFull = ""
+          return
+        }
 
-        const keyboard = keyboards.reduce((selected, candidate) => {
-          const selectedIndex = Number(selected.active_layout_index || 0)
-          const candidateIndex = Number(candidate.active_layout_index || 0)
-          return candidateIndex > selectedIndex ? candidate : selected
-        }, keyboards[0])
+        const keyboard = KeyglowModel.selectKeyboard(keyboards, root.typedKeyboardName)
+        if (!keyboard || !keyboard.active_keymap) {
+          root.keyboardUnresolved = true
+          return
+        }
 
+        root.keyboardUnresolved = false
+        root.keyboardCount = keyboards.length
         root.keyboardName = String(keyboard.name || "")
         root.layoutFull = String(keyboard.active_keymap || "")
         root.multipleLayouts = keyboard.layout === undefined || String(keyboard.layout).indexOf(",") !== -1
       }
     }
+  }
+
+  Timer {
+    id: queryStallTimer
+    interval: 5000
+    onTriggered: {
+      queryProc.running = false
+      root.refresh()
+    }
+  }
+
+  Timer {
+    interval: 10000
+    running: !root.keyboardName || root.keyboardUnresolved || root.keyboardCount > 1
+    repeat: true
+    onTriggered: root.refresh()
   }
 
   visible: layoutLabel !== "" && multipleLayouts
