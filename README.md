@@ -8,6 +8,7 @@ through Omarchy's native OSD.
 
 - Displays the current layout in the bar.
 - Shows instant OSD feedback when the layout changes.
+- Resolves labels for every installed XKB layout instead of using a fixed language list.
 - Ignores virtual keyboards such as fcitx5 to avoid duplicate notifications.
 - Clicks cycle the layout of the detected physical keyboard.
 - Has no external runtime dependencies beyond Omarchy.

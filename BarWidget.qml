@@ -11,6 +11,7 @@ BarWidget {
   property string layoutFull: ""
   property string keyboardName: ""
   property bool multipleLayouts: true
+  property var layoutBriefs: ({})
 
   readonly property string layoutLabel: shortLabel(layoutFull)
 
@@ -27,24 +28,33 @@ BarWidget {
   }
 
   function shortLabel(description) {
-    const known = {
-      "English (US)": "EN",
-      "English (UK)": "EN",
-      "Russian": "RU",
-      "Ukrainian": "UA"
-    }
     if (!description) return ""
-    return known[description] || description.split(/\s+/)[0].substring(0, 3).toUpperCase()
+    const brief = layoutBriefs[description]
+    const label = typeof brief === "string" && brief
+      ? brief.split("-")[0]
+      : description.split(/\s+/)[0]
+    return label.substring(0, 3).toUpperCase()
   }
 
-  function osdLabel(description) {
-    const known = {
-      "English (US)": "English",
-      "English (UK)": "English",
-      "Russian": "Русский",
-      "Ukrainian": "Українська"
-    }
-    return known[description] || description
+  function parseLayoutBriefs(output) {
+    const briefs = {}
+    let brief = ""
+
+    String(output || "").split("\n").forEach(line => {
+      if (/^\s*- /.test(line)) brief = ""
+
+      const field = line.match(/^  (brief|description): (.*)$/)
+      if (!field) return
+
+      if (field[1] === "brief") {
+        brief = field[2].replace(/^'|'$/g, "")
+      } else if (brief) {
+        briefs[field[2]] = brief
+        brief = ""
+      }
+    })
+
+    return briefs
   }
 
   function refresh() {
@@ -53,7 +63,7 @@ BarWidget {
 
   function showOsd(description) {
     if (!description || osdProc.running) return
-    osdProc.command = ["omarchy", "osd", "-i", "keyboard", "-m", osdLabel(description), "-d", "800"]
+    osdProc.command = ["omarchy", "osd", "-i", "keyboard", "-m", description, "-d", "800"]
     osdProc.running = true
   }
 
@@ -62,7 +72,10 @@ BarWidget {
     bar.run("hyprctl switchxkblayout " + bar.shellQuote(keyboardName) + " next")
   }
 
-  Component.onCompleted: refresh()
+  Component.onCompleted: {
+    briefsProc.running = true
+    refresh()
+  }
 
   Connections {
     target: Hyprland
@@ -83,6 +96,16 @@ BarWidget {
 
   Process {
     id: osdProc
+  }
+
+  Process {
+    id: briefsProc
+    command: ["xkbcli", "list", "--load-exotic"]
+
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: root.layoutBriefs = root.parseLayoutBriefs(text)
+    }
   }
 
   Process {
