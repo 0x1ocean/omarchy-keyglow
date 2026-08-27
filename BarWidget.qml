@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
+import qs.Commons
 import qs.Ui
 
 BarWidget {
@@ -69,7 +70,7 @@ BarWidget {
 
   function cycleLayout() {
     if (!keyboardName || !bar) return
-    bar.run("hyprctl switchxkblayout " + bar.shellQuote(keyboardName) + " next")
+    bar.run("hyprctl switchxkblayout " + Util.shellQuote(keyboardName) + " next")
   }
 
   Component.onCompleted: {
