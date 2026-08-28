@@ -10,8 +10,8 @@ its usual place.
 
 - Works with Omarchy's built-in keyboard layout widget instead of adding a second bar item.
 - Shows the active layout immediately through Omarchy's native OSD.
-- Supports physical keyboards and the Fcitx virtual keyboard.
-- Suppresses duplicate notifications and layout synchronization caused by changing windows.
+- Reacts only to physical keyboard layout changes.
+- Ignores Fcitx virtual-keyboard synchronization caused by changing windows.
 - Runs without background helpers or accessibility access.
 
 ## Install

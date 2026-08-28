@@ -24,35 +24,22 @@ function eventParts(event) {
   return [raw.substring(0, separator), raw.substring(separator + 1)]
 }
 
-// Fcitx owns the active layout through a Hyprland virtual keyboard, so it is
-// a valid source. Only devices that cannot type are ignored.
-var UNTYPED_KEYBOARDS = /^(?:power-button|sleep-button|lid-switch|video-bus)|(?:^|-)(?:hotkeys|extra-buttons)$/i
+// Fcitx virtual keyboards announce layout synchronization when window focus
+// changes. Physical keyboards announce the user's actual layout switches.
+var NON_PHYSICAL_KEYBOARDS = /^(?:hl-virtual-keyboard|power-button|sleep-button|lid-switch|video-bus)|(?:^|-)(?:hotkeys|extra-buttons)$/i
 
-function isTypedKeyboard(name) {
+function isPhysicalKeyboard(name) {
   var keyboardName = String(name || "").trim()
-  return keyboardName !== "" && !UNTYPED_KEYBOARDS.test(keyboardName)
+  return keyboardName !== "" && !NON_PHYSICAL_KEYBOARDS.test(keyboardName)
 }
 
-function activeLayoutEvent(event) {
+function physicalLayout(event) {
   if (!event || String(event.name || "") !== "activelayout") return null
 
   var parts = eventParts(event)
   var keyboardName = String(parts[0] || "").trim()
   var description = String(parts[1] || "").trim()
-  if (!isTypedKeyboard(keyboardName) || !description) return null
-
-  return { keyboardName: keyboardName, description: description }
-}
-
-function shouldShowLayout(description, previousDescription, focusChangedAt, now, quietPeriod) {
-  var current = String(description || "").trim()
-  if (!current || current === String(previousDescription || "").trim()) return false
-
-  var focusTime = Number(focusChangedAt)
-  var currentTime = Number(now)
-  var quiet = Math.max(0, Number(quietPeriod) || 0)
-  return !(isFinite(focusTime) && isFinite(currentTime) &&
-    currentTime - focusTime < quiet)
+  return isPhysicalKeyboard(keyboardName) && description ? description : null
 }
 
 function osdPayload(description) {
@@ -63,9 +50,8 @@ function osdPayload(description) {
 
 if (typeof module !== "undefined") {
   module.exports = {
-    activeLayoutEvent: activeLayoutEvent,
-    isTypedKeyboard: isTypedKeyboard,
+    isPhysicalKeyboard: isPhysicalKeyboard,
     osdPayload: osdPayload,
-    shouldShowLayout: shouldShowLayout
+    physicalLayout: physicalLayout
   }
 }

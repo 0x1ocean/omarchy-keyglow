@@ -5,6 +5,7 @@ const { describe, test } = require("node:test")
 
 const root = path.resolve(__dirname, "..")
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"))
+const service = fs.readFileSync(path.join(root, "Service.qml"), "utf8")
 
 describe("plugin manifest", () => {
   test("declares Keyglow as an OSD-only service", () => {
@@ -23,5 +24,18 @@ describe("plugin manifest", () => {
 
   test("does not ship the retired standalone bar widget", () => {
     assert.equal(fs.existsSync(path.join(root, "BarWidget.qml")), false)
+  })
+
+  test("keeps layout feedback on the direct, timer-free path", () => {
+    assert.match(service, /shell\.summon\("omarchy\.osd"/)
+    for (const retired of [
+      "Process {",
+      "Timer {",
+      "Date.now",
+      "execDetached",
+      "onActiveToplevelChanged"
+    ]) {
+      assert.equal(service.includes(retired), false, retired)
+    }
   })
 })

@@ -12,20 +12,21 @@ function parsedLayoutEvent(keyboardName, description) {
   }
 }
 
-describe("typing keyboard detection", () => {
-  test("accepts physical and Fcitx keyboards", () => {
+describe("physical keyboard detection", () => {
+  test("accepts physical keyboards", () => {
     for (const name of [
       "at-translated-set-2-keyboard",
       "usb-gaming-keyboard",
-      "roma’s-magic-keyboard",
-      "hl-virtual-keyboard-fcitx5"
+      "roma’s-magic-keyboard"
     ]) {
-      assert.equal(model.isTypedKeyboard(name), true, name)
+      assert.equal(model.isPhysicalKeyboard(name), true, name)
     }
   })
 
-  test("rejects buttons, hotkeys, and empty names", () => {
+  test("rejects virtual keyboards, buttons, hotkeys, and empty names", () => {
     for (const name of [
+      "hl-virtual-keyboard-fcitx5",
+      "hl-virtual-keyboard-wtype",
       "power-button",
       "sleep-button",
       "lid-switch",
@@ -35,10 +36,11 @@ describe("typing keyboard detection", () => {
       "",
       "   "
     ]) {
-      assert.equal(model.isTypedKeyboard(name), false, name)
+      assert.equal(model.isPhysicalKeyboard(name), false, name)
     }
   })
 })
+
 describe("layout events", () => {
   test("preserves descriptions in different languages", () => {
     for (const description of [
@@ -53,49 +55,32 @@ describe("layout events", () => {
       "한국어",
       "中文"
     ]) {
-      assert.deepEqual(
-        model.activeLayoutEvent(parsedLayoutEvent("usb-keyboard", description)),
-        { keyboardName: "usb-keyboard", description }
-      )
+      assert.equal(model.physicalLayout(
+        parsedLayoutEvent("usb-keyboard", description)), description)
     }
   })
 
-  test("accepts the Fcitx virtual keyboard", () => {
-    assert.deepEqual(
-      model.activeLayoutEvent(
-        parsedLayoutEvent("hl-virtual-keyboard-fcitx5", "Russian")
-      ),
-      {
-        keyboardName: "hl-virtual-keyboard-fcitx5",
-        description: "Russian"
-      }
-    )
+  test("ignores Fcitx focus synchronization", () => {
+    assert.equal(model.physicalLayout(
+      parsedLayoutEvent("hl-virtual-keyboard-fcitx5", "Russian")), null)
   })
 
   test("preserves commas from parsed and raw events", () => {
     const description = "English (US, intl., with dead keys)"
-    assert.deepEqual(
-      model.activeLayoutEvent(parsedLayoutEvent("usb-keyboard", description)),
-      { keyboardName: "usb-keyboard", description }
-    )
-    assert.deepEqual(
-      model.activeLayoutEvent({
-        name: "activelayout",
-        data: "usb-keyboard," + description
-      }),
-      { keyboardName: "usb-keyboard", description }
-    )
+    assert.equal(model.physicalLayout(
+      parsedLayoutEvent("usb-keyboard", description)), description)
+    assert.equal(model.physicalLayout({
+      name: "activelayout",
+      data: "usb-keyboard," + description
+    }), description)
   })
 
   test("falls back to raw data when parsing is unavailable", () => {
-    assert.deepEqual(
-      model.activeLayoutEvent({
-        name: "activelayout",
-        data: "usb-keyboard,Русский",
-        parse() { throw new Error("unavailable") }
-      }),
-      { keyboardName: "usb-keyboard", description: "Русский" }
-    )
+    assert.equal(model.physicalLayout({
+      name: "activelayout",
+      data: "usb-keyboard,Русский",
+      parse() { throw new Error("unavailable") }
+    }), "Русский")
   })
 
   test("ignores unrelated, incomplete, and non-typing events", () => {
@@ -107,38 +92,15 @@ describe("layout events", () => {
       { name: "activelayout", data: "usb-keyboard" },
       { name: "activelayout", data: "power-button,Russian" }
     ]) {
-      assert.equal(model.activeLayoutEvent(event), null)
+      assert.equal(model.physicalLayout(event), null)
     }
   })
 
   test("trims harmless outer whitespace", () => {
-    assert.deepEqual(
-      model.activeLayoutEvent({
-        name: "activelayout",
-        data: "  usb-keyboard  ,  Русский  "
-      }),
-      { keyboardName: "usb-keyboard", description: "Русский" }
-    )
-  })
-})
-
-describe("notification filtering", () => {
-  test("suppresses duplicate layouts", () => {
-    assert.equal(
-      model.shouldShowLayout("Russian", "Russian", 0, 5000, 150),
-      false
-    )
-  })
-
-  test("suppresses focus synchronization briefly", () => {
-    assert.equal(
-      model.shouldShowLayout("Russian", "English (US)", 1000, 1100, 150),
-      false
-    )
-    assert.equal(
-      model.shouldShowLayout("Russian", "English (US)", 1000, 1150, 150),
-      true
-    )
+    assert.equal(model.physicalLayout({
+      name: "activelayout",
+      data: "  usb-keyboard  ,  Русский  "
+    }), "Русский")
   })
 })
 
