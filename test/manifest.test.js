@@ -26,11 +26,12 @@ describe("plugin manifest", () => {
     assert.equal(fs.existsSync(path.join(root, "BarWidget.qml")), false)
   })
 
-  test("keeps layout feedback on the direct, timer-free path", () => {
+  test("keeps layout feedback on the direct path", () => {
     assert.match(service, /shell\.summon\("omarchy\.osd"/)
+    assert.match(service, /activeWindowAddress/)
+    assert.match(service, /focusGuard\.running/)
     for (const retired of [
       "Process {",
-      "Timer {",
       "Date.now",
       "execDetached",
       "onActiveToplevelChanged"

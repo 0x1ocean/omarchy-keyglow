@@ -12,6 +12,26 @@ function parsedLayoutEvent(keyboardName, description) {
   }
 }
 
+describe("window focus events", () => {
+  test("extracts the focused window address", () => {
+    assert.equal(model.activeWindow({
+      name: "activewindowv2",
+      data: "5641bd425260"
+    }), "5641bd425260")
+  })
+
+  test("falls back to parsed data and ignores unrelated events", () => {
+    assert.equal(model.activeWindow({
+      name: "activewindowv2",
+      parse(limit) {
+        assert.equal(limit, 1)
+        return ["5641bcc327f0"]
+      }
+    }), "5641bcc327f0")
+    assert.equal(model.activeWindow({ name: "activelayout" }), null)
+  })
+})
+
 describe("physical keyboard detection", () => {
   test("accepts physical keyboards", () => {
     for (const name of [

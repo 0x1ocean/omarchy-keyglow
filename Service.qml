@@ -8,6 +8,7 @@ Item {
   id: root
 
   property var shell: null
+  property string activeWindowAddress: ""
 
   function showLayout(description) {
     const payload = KeyglowModel.osdPayload(description)
@@ -19,8 +20,21 @@ Item {
     target: Hyprland
 
     function onRawEvent(event) {
+      const address = KeyglowModel.activeWindow(event)
+      if (address) {
+        if (root.activeWindowAddress && root.activeWindowAddress !== address)
+          focusGuard.restart()
+        root.activeWindowAddress = address
+        return
+      }
+
       const description = KeyglowModel.physicalLayout(event)
-      if (description) root.showLayout(description)
+      if (description && !focusGuard.running) root.showLayout(description)
     }
+  }
+
+  Timer {
+    id: focusGuard
+    interval: 200
   }
 }

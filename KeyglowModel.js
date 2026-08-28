@@ -24,6 +24,20 @@ function eventParts(event) {
   return [raw.substring(0, separator), raw.substring(separator + 1)]
 }
 
+function activeWindow(event) {
+  if (!event || String(event.name || "") !== "activewindowv2") return null
+
+  var address = String(event.data || "").trim()
+  if (!address && event.parse) {
+    try {
+      var parts = event.parse(1)
+      address = String(parts && parts[0] || "").trim()
+    } catch (error) {
+    }
+  }
+  return address || null
+}
+
 // Fcitx virtual keyboards announce layout synchronization when window focus
 // changes. Physical keyboards announce the user's actual layout switches.
 var NON_PHYSICAL_KEYBOARDS = /^(?:hl-virtual-keyboard|power-button|sleep-button|lid-switch|video-bus)|(?:^|-)(?:hotkeys|extra-buttons)$/i
@@ -50,6 +64,7 @@ function osdPayload(description) {
 
 if (typeof module !== "undefined") {
   module.exports = {
+    activeWindow: activeWindow,
     isPhysicalKeyboard: isPhysicalKeyboard,
     osdPayload: osdPayload,
     physicalLayout: physicalLayout
