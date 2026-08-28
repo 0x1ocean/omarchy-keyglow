@@ -1,21 +1,15 @@
-// Hyprland's activelayout event pairs the keyboard that switched with the layout
-// it moved to. Quickshell cuts the event into that many fields, so a description
-// carrying a comma of its own stays in one piece. Older bindings expose only the
-// raw string; join its tail back together so commas in the description survive.
 function normalizedParts(parts) {
-  if (!parts || typeof parts === "string" || typeof parts.length !== "number" || parts.length < 2) return null
+  if (!parts || typeof parts === "string" ||
+      typeof parts.length !== "number" || parts.length < 2) return null
 
   var description = []
   for (var index = 1; index < parts.length; index += 1) {
     description.push(String(parts[index] || ""))
   }
-
   return [parts[0], description.join(",")]
 }
-
 function eventParts(event) {
   var parts
-
   try {
     if (event && event.parse) parts = event.parse(2)
   } catch (error) {
@@ -30,9 +24,9 @@ function eventParts(event) {
   return [raw.substring(0, separator), raw.substring(separator + 1)]
 }
 
-// Hyprland also announces layout changes from virtual input methods and ACPI
-// buttons. Ignore those so only a physical keyboard switch produces an OSD.
-var UNTYPED_KEYBOARDS = /^(?:hl-virtual-keyboard|power-button|sleep-button|lid-switch|video-bus)|(?:^|-)(?:hotkeys|extra-buttons)$/i
+// Fcitx owns the active layout through a Hyprland virtual keyboard, so it is
+// a valid source. Only devices that cannot type are ignored.
+var UNTYPED_KEYBOARDS = /^(?:power-button|sleep-button|lid-switch|video-bus)|(?:^|-)(?:hotkeys|extra-buttons)$/i
 
 function isTypedKeyboard(name) {
   var keyboardName = String(name || "").trim()
@@ -45,21 +39,33 @@ function activeLayoutEvent(event) {
   var parts = eventParts(event)
   var keyboardName = String(parts[0] || "").trim()
   var description = String(parts[1] || "").trim()
+  if (!isTypedKeyboard(keyboardName) || !description) return null
 
-  if (!keyboardName || !description || !isTypedKeyboard(keyboardName)) return null
   return { keyboardName: keyboardName, description: description }
 }
 
-function osdCommand(description) {
+function shouldShowLayout(description, previousDescription, focusChangedAt, now, quietPeriod) {
+  var current = String(description || "").trim()
+  if (!current || current === String(previousDescription || "").trim()) return false
+
+  var focusTime = Number(focusChangedAt)
+  var currentTime = Number(now)
+  var quiet = Math.max(0, Number(quietPeriod) || 0)
+  return !(isFinite(focusTime) && isFinite(currentTime) &&
+    currentTime - focusTime < quiet)
+}
+
+function osdPayload(description) {
   var message = String(description || "").trim()
-  if (!message) return []
-  return ["omarchy", "osd", "-i", "keyboard", "-m", message, "-d", "800"]
+  if (!message) return null
+  return { icon: "keyboard", message: message, duration: 800 }
 }
 
 if (typeof module !== "undefined") {
   module.exports = {
     activeLayoutEvent: activeLayoutEvent,
     isTypedKeyboard: isTypedKeyboard,
-    osdCommand: osdCommand
+    osdPayload: osdPayload,
+    shouldShowLayout: shouldShowLayout
   }
 }

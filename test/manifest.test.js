@@ -17,6 +17,10 @@ describe("plugin manifest", () => {
     assert.equal(fs.existsSync(path.join(root, manifest.entryPoints.service)), true)
   })
 
+  test("does not ship background caret helpers", () => {
+    assert.equal(fs.existsSync(path.join(root, "caret_locator.py")), false)
+  })
+
   test("does not ship the retired standalone bar widget", () => {
     assert.equal(fs.existsSync(path.join(root, "BarWidget.qml")), false)
   })

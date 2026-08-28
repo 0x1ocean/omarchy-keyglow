@@ -2,17 +2,17 @@
 
 [![Test](https://github.com/0x1ocean/omarchy-keyglow/actions/workflows/test.yml/badge.svg)](https://github.com/0x1ocean/omarchy-keyglow/actions/workflows/test.yml)
 
-Keyglow adds instant native OSD feedback to Omarchy's built-in keyboard layout
-indicator. The stock widget keeps its usual place and behavior; Keyglow runs in
-the background and briefly shows the new layout when a physical keyboard
-switches.
+Keyglow adds immediate keyboard-layout feedback to Omarchy's built-in keyboard
+layout indicator. It uses Omarchy's native OSD and keeps the stock widget in
+its usual place.
 
 ## Features
 
 - Works with Omarchy's built-in keyboard layout widget instead of adding a second bar item.
-- Shows instant OSD feedback when the layout changes.
-- Ignores virtual keyboards such as fcitx5 to avoid duplicate notifications.
-- Has no external runtime dependencies beyond Omarchy.
+- Shows the active layout immediately through Omarchy's native OSD.
+- Supports physical keyboards and the Fcitx virtual keyboard.
+- Suppresses duplicate notifications and layout synchronization caused by changing windows.
+- Runs without background helpers or accessibility access.
 
 ## Install
 
