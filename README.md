@@ -2,6 +2,8 @@
 
 [![Test](https://github.com/0x1ocean/omarchy-keyglow/actions/workflows/test.yml/badge.svg)](https://github.com/0x1ocean/omarchy-keyglow/actions/workflows/test.yml)
 
+![Keyglow preview](preview.png)
+
 Keyglow adds immediate keyboard-layout feedback to Omarchy's built-in keyboard
 layout indicator. It uses Omarchy's native OSD and keeps the stock widget in
 its usual place.
@@ -13,6 +15,11 @@ its usual place.
 - Reacts only to physical keyboard layout changes.
 - Ignores Fcitx virtual-keyboard synchronization caused by changing windows.
 - Runs without background helpers or accessibility access.
+
+## Requirements
+
+- Omarchy Quattro with the built-in keyboard layout widget enabled.
+- No external runtime dependencies.
 
 ## Install
 

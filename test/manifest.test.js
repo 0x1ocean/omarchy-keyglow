@@ -18,6 +18,10 @@ describe("plugin manifest", () => {
     assert.equal(fs.existsSync(path.join(root, manifest.entryPoints.service)), true)
   })
 
+  test("ships a marketplace preview", () => {
+    assert.equal(fs.existsSync(path.join(root, "preview.png")), true)
+  })
+
   test("does not ship background caret helpers", () => {
     assert.equal(fs.existsSync(path.join(root, "caret_locator.py")), false)
   })
